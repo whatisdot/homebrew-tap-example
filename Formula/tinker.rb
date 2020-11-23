@@ -1,5 +1,3 @@
-require 'brew/Library/Homebrew/download_strategy'
-
 class Tinker < Formula
   desc 'Install the Tinker toolset.'
   homepage 'https://github.com/bodyshopbidsdotcom/tinker'
@@ -7,7 +5,7 @@ class Tinker < Formula
   head 'https://github.com/bodyshopbidsdotcom/tinker.git', :branch => 'master' # (the default is 'master')
                                          # or :tag => '1_0_release',
                                          # or :revision => '090930930295adslfknsdfsdaffnasd13'
-  url 'https://github.com/bodyshopbidsdotcom/tinker.git', :using => GitHubPrivateRepositoryDownloadStrategy
+  url 'https://github.com/bodyshopbidsdotcom/tinker.git', :using => CurlDownloadStrategy
   # url 'https://github.com/bodyshopbidsdotcom/tinker/archive/v0.0.1.tar.gz', :using => GitHubPrivateRepositoryDownloadStrategy
   sha256 '0ae1feb1c90b326afe140db94a7833cd0d466b0a7a3767a87431eadb9d5900e7'
   license 'MIT'
