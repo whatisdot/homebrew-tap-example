@@ -1,6 +1,5 @@
-# Documentation: https://docs.brew.sh/Formula-Cookbook
-#                https://rubydoc.brew.sh/Formula
-# PLEASE REMOVE ALL GENERATED COMMENTS BEFORE SUBMITTING YOUR PULL REQUEST!
+require 'brew/Library/Homebrew/download_strategy'
+
 class Tinker < Formula
   desc 'Install the Tinker toolset.'
   homepage 'https://github.com/bodyshopbidsdotcom/tinker'
