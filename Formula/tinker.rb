@@ -1,3 +1,5 @@
+require 'formula'
+
 class Tinker < Formula
   desc 'Install the Tinker toolset.'
   homepage 'https://github.com/bodyshopbidsdotcom/tinker'
