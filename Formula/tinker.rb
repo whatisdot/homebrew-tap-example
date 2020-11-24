@@ -33,6 +33,7 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   end
 
   def set_github_token
+    require 'pry';binding.pry
     @github_token = ENV["GITHUB_OAUTH_CREDENTIALS"]
     unless @github_token
       raise CurlDownloadStrategyError, "Environmental variable GITHUB_OAUTH_CREDENTIALS is required."
