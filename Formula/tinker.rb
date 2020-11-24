@@ -150,7 +150,7 @@ class Tinker < Formula
   def install
     # ENV.deparallelize  # if your formula fails when building in parallel
     ENV['GEM_HOME'] = libexec
-    system 'bundle', 'install'
+    # system 'bundle', 'install'
     system 'gem', 'build', "#{name}.gemspec"
     system 'gem', 'install', "#{name}-#{version}.gem"
     bin.install libexec/"bin/#{name}"
