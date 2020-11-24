@@ -39,19 +39,23 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   end
 
   def download_url
-    "https://#{@github_token}@github.com/#{@owner}/#{@repo}#{@filepath}"
+    "https://api.github.com/#{@owner}/#{@repo}#{@filepath}"
   end
 
   private
 
   def _fetch(url:, resolved_url:)
-    curl_download download_url, to: temporary_path
+    curl_download(
+      download_url,
+      '--header', "Authorization: token #{@github_token}",
+      to: temporary_path
+    )
   end
 
   def set_github_token
-    @github_token = ENV['GITHUB_OAUTH_CREDENTIALS']
+    @github_token = ENV['HOMEBREW_GITHUB_API_TOKEN']
     unless @github_token
-      raise CurlDownloadStrategyError, 'Environmental variable GITHUB_OAUTH_CREDENTIALS is required.'
+      raise CurlDownloadStrategyError, 'Environmental variable HOMEBREW_GITHUB_API_TOKEN is required.'
     end
 
     validate_github_repository_access!
@@ -64,7 +68,7 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
     # We only handle HTTPNotFoundError here,
     # becase AuthenticationFailedError is handled within util/github.
     message = <<~EOS
-      GITHUB_OAUTH_CREDENTIALS can not access the repository: #{@owner}/#{@repo}
+      HOMEBREW_GITHUB_API_TOKEN can not access the repository: #{@owner}/#{@repo}
       This token may not have permission to access the repository or the url of formula may be incorrect.
     EOS
     raise CurlDownloadStrategyError, message
@@ -81,24 +85,28 @@ class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDo
   end
 
   def parse_url_pattern
-    url_pattern = %r{https://github.com/([^/]+)/([^/]+)/releases/download/([^/]+)/(\S+)}
+    url_pattern = %r{https://github.com/([^/]+)/([^/]+)/archive/([^/]+)(\.tar\.gz|\.zip)}
     unless @url =~ url_pattern
       raise CurlDownloadStrategyError, 'Invalid url pattern for GitHub Release.'
     end
 
-    _, @owner, @repo, @tag, @filename = *@url.match(url_pattern)
+    _, @owner, @repo, @tag, @file_extension = *@url.match(url_pattern)
+    @filename = "#{@tag}#{@file_extension}"
   end
 
   def download_url
-    "https://#{@github_token}@api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}"
+    "https://api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}"
   end
 
   private
 
   def _fetch(url:, resolved_url:)
-    # HTTP request header `Accept: application/octet-stream` is required.
-    # Without this, the GitHub API will respond with metadata, not binary.
-    curl_download download_url, '--header', 'Accept: application/octet-stream', to: temporary_path
+    curl_download(
+      "#{fetch_release_metadata['tarball_url']}",
+      '--header', 'Accept: application/vnd.github.v3+json',
+      '--header', "Authorization: token #{@github_token}",
+      to: temporary_path
+    )
   end
 
   def asset_id
@@ -126,9 +134,11 @@ class Tinker < Formula
   head 'https://github.com/bodyshopbidsdotcom/tinker.git', :branch => 'release' # (the default is 'master')
                                          # or :tag => '1_0_release',
                                          # or :revision => '090930930295adslfknsdfsdaffnasd13'
-  url 'https://github.com/bodyshopbidsdotcom/tinker.git', :using => GitHubPrivateRepositoryDownloadStrategy
-  # url 'https://github.com/bodyshopbidsdotcom/tinker/archive/v0.0.1.tar.gz', :using => GitHubPrivateRepositoryDownloadStrategy
-  sha256 '0ae1feb1c90b326afe140db94a7833cd0d466b0a7a3767a87431eadb9d5900e7'
+
+  # url 'https://github.com/bodyshopbidsdotcom/tinker', :using => GitHubPrivateRepositoryDownloadStrategy
+  url 'https://github.com/bodyshopbidsdotcom/tinker/archive/v0.0.1.tar.gz', :using => GitHubPrivateRepositoryReleaseDownloadStrategy
+
+  sha256 '02631f9bb4aebd7b6cf5e63316be45d2908ba5a1a5a218d33a31840c283f38d3'
   license 'MIT'
   version '0.0.1'
 
