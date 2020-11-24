@@ -1,12 +1,28 @@
 require 'download_strategy'
 
+# Credit to debugging tip:
+#   https://stevenharman.net/debugging-homebrew-with-pry-byebug#a-second-successful-attempt
+if Context.current.debug?
+  Homebrew.install_gem_setup_path! 'pry'
+  Homebrew.install_gem_setup_path! 'pry-byebug', executable: 'pry'
+  Homebrew.install_gem_setup_path! 'dotenv'
+  require 'dotenv/load'
+  require 'pry-byebug'
+end
+
+# Documentation on creating Formulas:
+#   https://docs.brew.sh/Formula-Cookbook
+#
+# Test locally like this:
+#   brew install --debug --verbose --build-from-source Formula/tinker.rb
+
 ###
 # Taken from code removed from the homebrew source. They now recommend people
 # define these in their formula. See this link for details:
 #   https://github.com/Homebrew/brew/pull/5112/
 class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
-  require "utils/formatter"
-  require "utils/github"
+  require 'utils/formatter'
+  require 'utils/github'
 
   def initialize(url, name, version, **meta)
     super
@@ -16,7 +32,7 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
 
   def parse_url_pattern
     unless match = url.match(%r{https://github.com/([^/]+)/([^/]+)(/\S*)*})
-      raise CurlDownloadStrategyError, "Invalid url pattern for GitHub Repository."
+      raise CurlDownloadStrategyError, 'Invalid url pattern for GitHub Repository.'
     end
 
     _, @owner, @repo, @filepath = *match
@@ -33,10 +49,9 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   end
 
   def set_github_token
-    # require 'pry';binding.pry
-    @github_token = ENV["GITHUB_OAUTH_CREDENTIALS"]
+    @github_token = ENV['GITHUB_OAUTH_CREDENTIALS']
     unless @github_token
-      raise CurlDownloadStrategyError, "Environmental variable GITHUB_OAUTH_CREDENTIALS is required."
+      raise CurlDownloadStrategyError, 'Environmental variable GITHUB_OAUTH_CREDENTIALS is required.'
     end
 
     validate_github_repository_access!
@@ -68,7 +83,7 @@ class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDo
   def parse_url_pattern
     url_pattern = %r{https://github.com/([^/]+)/([^/]+)/releases/download/([^/]+)/(\S+)}
     unless @url =~ url_pattern
-      raise CurlDownloadStrategyError, "Invalid url pattern for GitHub Release."
+      raise CurlDownloadStrategyError, 'Invalid url pattern for GitHub Release.'
     end
 
     _, @owner, @repo, @tag, @filename = *@url.match(url_pattern)
@@ -83,7 +98,7 @@ class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDo
   def _fetch(url:, resolved_url:)
     # HTTP request header `Accept: application/octet-stream` is required.
     # Without this, the GitHub API will respond with metadata, not binary.
-    curl_download download_url, "--header", "Accept: application/octet-stream", to: temporary_path
+    curl_download download_url, '--header', 'Accept: application/octet-stream', to: temporary_path
   end
 
   def asset_id
@@ -92,10 +107,10 @@ class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDo
 
   def resolve_asset_id
     release_metadata = fetch_release_metadata
-    assets = release_metadata["assets"].select { |a| a["name"] == @filename }
-    raise CurlDownloadStrategyError, "Asset file not found." if assets.empty?
+    assets = release_metadata['assets'].select { |a| a['name'] == @filename }
+    raise CurlDownloadStrategyError, 'Asset file not found.' if assets.empty?
 
-    assets.first["id"]
+    assets.first['id']
   end
 
   def fetch_release_metadata
@@ -108,7 +123,7 @@ class Tinker < Formula
   desc 'Install the Tinker toolset.'
   homepage 'https://github.com/bodyshopbidsdotcom/tinker'
   # pass the --HEAD parameter to install a dev version from remote and branch
-  head 'https://github.com/bodyshopbidsdotcom/tinker.git', :branch => 'master' # (the default is 'master')
+  head 'https://github.com/bodyshopbidsdotcom/tinker.git', :branch => 'release' # (the default is 'master')
                                          # or :tag => '1_0_release',
                                          # or :revision => '090930930295adslfknsdfsdaffnasd13'
   url 'https://github.com/bodyshopbidsdotcom/tinker.git', :using => GitHubPrivateRepositoryDownloadStrategy
