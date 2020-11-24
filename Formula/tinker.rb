@@ -1,27 +1,21 @@
 require 'download_strategy'
 
-# GitHubPrivateRepositoryDownloadStrategy downloads contents from GitHub
-# Private Repository. To use it, add
-# `:using => :github_private_repo` to the URL section of
-# your formula. This download strategy uses GitHub access tokens (in the
-# environment variables `HOMEBREW_GITHUB_API_TOKEN`) to sign the request.  This
-# strategy is suitable for corporate use just like S3DownloadStrategy, because
-# it lets you use a private GitHub repository for internal distribution.  It
-# works with public one, but in that case simply use CurlDownloadStrategy.
+###
+# Taken from code removed from the homebrew source. They now recommend people
+# define these in their formula. See this link for details:
+#   https://github.com/Homebrew/brew/pull/5112/
 class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   require "utils/formatter"
   require "utils/github"
 
   def initialize(url, name, version, **meta)
-    odeprecated("GitHubPrivateRepositoryDownloadStrategy",
-      "maintaining GitHubPrivateRepositoryDownloadStrategy in your own formula or tap")
     super
     parse_url_pattern
     set_github_token
   end
 
   def parse_url_pattern
-    unless match = url.match(%r{https://github.com/([^/]+)/([^/]+)/(\S+)})
+    unless match = url.match(%r{https://github.com/([^/]+)/([^/]+)(/\S*)*})
       raise CurlDownloadStrategyError, "Invalid url pattern for GitHub Repository."
     end
 
@@ -29,7 +23,7 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   end
 
   def download_url
-    "https://#{@github_token}@github.com/#{@owner}/#{@repo}/#{@filepath}"
+    "https://#{@github_token}@github.com/#{@owner}/#{@repo}#{@filepath}"
   end
 
   private
@@ -39,9 +33,9 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
   end
 
   def set_github_token
-    @github_token = ENV["HOMEBREW_GITHUB_API_TOKEN"]
+    @github_token = ENV["GITHUB_OAUTH_CREDENTIALS"]
     unless @github_token
-      raise CurlDownloadStrategyError, "Environmental variable HOMEBREW_GITHUB_API_TOKEN is required."
+      raise CurlDownloadStrategyError, "Environmental variable GITHUB_OAUTH_CREDENTIALS is required."
     end
 
     validate_github_repository_access!
@@ -54,21 +48,19 @@ class GitHubPrivateRepositoryDownloadStrategy < CurlDownloadStrategy
     # We only handle HTTPNotFoundError here,
     # becase AuthenticationFailedError is handled within util/github.
     message = <<~EOS
-      HOMEBREW_GITHUB_API_TOKEN can not access the repository: #{@owner}/#{@repo}
+      GITHUB_OAUTH_CREDENTIALS can not access the repository: #{@owner}/#{@repo}
       This token may not have permission to access the repository or the url of formula may be incorrect.
     EOS
     raise CurlDownloadStrategyError, message
   end
 end
 
-# GitHubPrivateRepositoryReleaseDownloadStrategy downloads tarballs from GitHub
-# Release assets. To use it, add `:using => :github_private_release` to the URL section
-# of your formula. This download strategy uses GitHub access tokens (in the
-# environment variables HOMEBREW_GITHUB_API_TOKEN) to sign the request.
+###
+# Taken from code removed from the homebrew source. They now recommend people
+# define these in their formula. See this link for details:
+#   https://github.com/Homebrew/brew/pull/5112/
 class GitHubPrivateRepositoryReleaseDownloadStrategy < GitHubPrivateRepositoryDownloadStrategy
   def initialize(url, name, version, **meta)
-    odeprecated("GitHubPrivateRepositoryReleaseDownloadStrategy",
-      "maintaining GitHubPrivateRepositoryReleaseDownloadStrategy in your own formula or tap")
     super
   end
 
@@ -118,7 +110,7 @@ class Tinker < Formula
   head 'https://github.com/bodyshopbidsdotcom/tinker.git', :branch => 'master' # (the default is 'master')
                                          # or :tag => '1_0_release',
                                          # or :revision => '090930930295adslfknsdfsdaffnasd13'
-  url 'https://github.com/bodyshopbidsdotcom/tinker', :using => GitHubPrivateRepositoryDownloadStrategy
+  url 'https://github.com/bodyshopbidsdotcom/tinker.git', :using => GitHubPrivateRepositoryDownloadStrategy
   # url 'https://github.com/bodyshopbidsdotcom/tinker/archive/v0.0.1.tar.gz', :using => GitHubPrivateRepositoryDownloadStrategy
   sha256 '0ae1feb1c90b326afe140db94a7833cd0d466b0a7a3767a87431eadb9d5900e7'
   license 'MIT'
