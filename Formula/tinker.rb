@@ -146,6 +146,22 @@ class Tinker < Formula
   depends_on 'pkg-config' => '0.29.2_3'
   depends_on 'rbenv' => '1.1.2'
 
+  def init_paths_and_versions(ruby_version)
+    ruby_major_version = ruby_version.split('.').select{|s| Float(s) != nil rescue false}.first(2).join('.')
+    ruby_major_version = "#{ruby_major_version}.0"
+    rbenv_home = prefix/'.rbenv'
+    ruby_home = rbenv_home/"versions/#{ruby_version}"
+    gem_home = ruby_home/"lib/ruby/gems/#{ruby_major_version}"
+
+    # Set environment to persist rbenv ruby version for tinker.
+    ENV['GEM_HOME'] = gem_home
+    ENV['GEM_PATH'] = "#{gem_home}:#{ENV['GEM_PATH']}"
+    ENV['HOME'] = prefix.to_s
+    ENV['PATH'] = "#{rbenv_home}/shims:#{ENV['PATH']}"
+    ENV['RBENV_SHELL'] = 'ruby'
+    ENV['RBENV_VERSION'] = ruby_version
+  end
+
   def setup_debug_tools
     Homebrew.install_gem_setup_path! 'pry'
     Homebrew.install_gem_setup_path! 'pry-byebug', executable: 'pry'
@@ -162,19 +178,7 @@ class Tinker < Formula
 
     # Setting our home directories and paths for ruby and gem installation.
     ruby_version = open('.ruby-version').read.strip
-    ruby_major_version = ruby_version.split('.').select{|s| Float(s) != nil rescue false}.first(2).join('.')
-    ruby_major_version = "#{ruby_major_version}.0"
-    rbenv_home = prefix/'.rbenv'
-    ruby_home = rbenv_home/"versions/#{ruby_version}"
-    gem_home = ruby_home/"lib/ruby/gems/#{ruby_major_version}"
-
-    # Set environment to persist rbenv ruby version for tinker.
-    ENV['GEM_HOME'] = gem_home
-    ENV['GEM_PATH'] = "#{gem_home}:#{ENV['GEM_PATH']}"
-    ENV['HOME'] = prefix.to_s
-    ENV['PATH'] = "#{rbenv_home}/shims:#{ENV['PATH']}"
-    ENV['RBENV_SHELL'] = 'ruby'
-    ENV['RBENV_VERSION'] = ruby_version
+    self.init_paths_and_versions(ruby_version)
     system 'rbenv', 'rehash'
 
     # Install the required ruby version.
@@ -191,7 +195,7 @@ class Tinker < Formula
         original_file,
         GEM_HOME: ENV['GEM_HOME'],
         GEM_PATH: ENV['GEM_PATH'],
-        PATH: "#{rbenv_home}/shims:$PATH",
+        PATH: "#{prefix}/.rbenv/shims:$PATH",
         RBENV_VERSION: ruby_version
       )
       `chmod +x #{target_file}`
@@ -200,15 +204,12 @@ class Tinker < Formula
   end
 
   test do
-    # `test do` will create, run in and delete a temporary directory.
-    #
-    # This test will fail and we won't accept that! For Homebrew/homebrew-core
-    # this will need to be a test that verifies the functionality of the
-    # software. Run the test with `brew test tinker`. Options passed
-    # to `brew install` such as `--HEAD` also need to be provided to `brew test`.
-    #
-    # The installed folder is not in the path, so use the entire path to any
-    # executables being tested: `system '#{bin}/program', 'do', 'something'`.
-    system 'false'
+    self.setup_debug_tools
+
+    ruby_version = open(prefix/'.rbenv/version').read.strip
+    self.init_paths_and_versions(ruby_version)
+
+    assert_match "#{version}", '0.0.1'
+    assert_true shell_output('ruby --version').include?(ruby_version)
   end
 end
