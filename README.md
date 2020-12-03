@@ -1,4 +1,5 @@
-# Whatisdot Tap-example
+# Snapsheet Core Homebrew Tap
+This is a Homebrew tap for useful formulae used by engineers at Snapsheet.
 
 ## Installation
 These packages require a GitHub token to be set up in your environment with the name `HOMEBREW_GITHUB_API_TOKEN`.
@@ -10,12 +11,12 @@ HOMEBREW_GITHUB_API_TOKEN=xxxxx brew ...
 
 Install a specific formula from this repository:
 ```
-brew install whatisdot/tap-example/<formula>
+brew install snapsheet/tap-core/<formula>
 ```
 
 Install the repository and then formula by name:
 ```
-brew tap whatisdot/tap-example
+brew tap snapsheet/tap-core
 brew install <formula>
 ```
 
