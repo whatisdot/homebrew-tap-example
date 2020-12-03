@@ -1,0 +1,8 @@
+--protected
+--no-private
+--output-dir ./docs
+lib/**/*.rb
+-
+CHANGELOG.md
+README.md
+LICENSE

@@ -1,0 +1,23 @@
+name: Publish Docs
+on:
+  pull_request:
+jobs:
+  pr-pull:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby 2.7
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 2.7
+    - name: Build Docs
+      run: |
+        gem install bundler
+        bundle install --jobs 4 --retry 3
+        bundle exec yard doc
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        publish_dir: ./docs
